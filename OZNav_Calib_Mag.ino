@@ -7,7 +7,8 @@ Prendre la valeur F = Total Intensity et la diviser par 1000 puisque nous sommes
 Par exemple 47.128 µT pour Marans le 08/03/2018
 C'est la valeur à entrer dans Magneto 1.2
 
-Ouvrir un moniteur série et bouger le NXP pour collecter les données.
+Ouvrir un moniteur série et bouger le NXP en 3D loin de toutes masses métalliques et magnétiques
+ainsi que toutes sources de courant pour collecter les données. J'utilise un cordon USB de 5m.
 Copier-coller l'ensemble des données dans un fichier texte et l'importer dans Magneto 1.2
 
 Mettre à jour les valeurs de OZNav/compas.h avec les calculs de Magneto :
