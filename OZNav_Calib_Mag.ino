@@ -1,79 +1,57 @@
-/*  Etalonnage du magnétomètre.
- *  Utiliser avec C:\Users\Olivier\Documents\Voile\Navigation\Calibration\MotionCal.exe
- *  et entrer les valeurs relevées dans OZNav\compas.h
- */
+/* Etalonnage du magnétomètre
+ 
+Norm of Magnetic field calculator pour Magneto :
+http://www.geomag.bgs.ac.uk/data_service/models_compass/wmm_calc.html
 
+Prendre la valeur F = Total Intensity et la diviser par 1000 puisque nous sommes en µT
+Par exemple 47.128 µT pour Marans le 08/03/2018
+C'est la valeur à entrer dans Magneto 1.2
+
+Ouvrir un moniteur série et bouger le NXP pour collecter les données.
+Copier-coller l'ensemble des données dans un fichier texte et l'importer dans Magneto 1.2
+
+Mettre à jour les valeurs de OZNav/compas.h avec les calculs de Magneto :
+- Combined bias (b) dans mag_offsets
+- Correction for combined scale factors, misalignments and soft iron (A) dans mag_softiron_matrix
+- Norm of Magnetic field dans mag_field_strength (pour info, non utilisé)
+*/
+ 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_FXAS21002C.h>
 #include <Adafruit_FXOS8700.h>
 
+#define MAG_UT_LSB      (0.1F)
+
 // Create sensor instances.
-Adafruit_FXAS21002C gyro = Adafruit_FXAS21002C(0x0021002C);
 Adafruit_FXOS8700 accelmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
 
-// NOTE: THIS IS A WORK IN PROGRESS!
-
-// This sketch can be used to output raw sensor data in a format that
-// can be understoof by MotionCal from PJRC. Download the application
-// from http://www.pjrc.com/store/prop_shield.html and make note of the
-// magentic offsets after rotating the sensors sufficiently.
-//
-// You should end up with 3 offsets for X/Y/Z, which are displayed
-// in the top-right corner of the application.
+// Offsets X, Y et Z de l'accéléromètre entrés directement dans le FXOS8700
+int accel_offset[3]             = { -14, 20, -27 };
 
 void setup()
 {
-  Serial.begin(115200);
-
-  // Wait for the Serial Monitor to open (comment out to run without Serial Monitor)
-  // while(!Serial);
-
-  Serial.println(F("Adafruit nDOF AHRS Calibration Example")); Serial.println("");
-
-  // Initialize the sensors.
-  if(!gyro.begin())
-  {
-    /* There was a problem detecting the gyro ... check your connections */
-    Serial.println("Ooops, no gyro detected ... Check your wiring!");
-    while(1);
-  }
-
-  if(!accelmag.begin(ACCEL_RANGE_4G))
+  Serial.begin(38400);
+  if(!accelmag.begin(ACCEL_RANGE_2G, accel_offset[0], accel_offset[1], accel_offset[2]))
   {
     Serial.println("Ooops, no FXOS8700 detected ... Check your wiring!");
     while(1);
   }
+  Serial.println("Magnetometer Uncalibrated (Units in µT/LSB)");
 }
 
-void loop(void)
+void loop()
 {
   sensors_event_t event; // Need to read raw data, which is stored at the same time
+  float Xm_print, Ym_print, Zm_print;
 
-    // Get new data samples
-    gyro.getEvent(&event);
-    accelmag.getEvent(&event);
-
-  // Print the sensor data
-  Serial.print("Raw:");
-  Serial.print(accelmag.accel_raw.x);
-  Serial.print(',');
-  Serial.print(accelmag.accel_raw.y);
-  Serial.print(',');
-  Serial.print(accelmag.accel_raw.z);
-  Serial.print(',');
-  Serial.print(gyro.raw.x);
-  Serial.print(',');
-  Serial.print(gyro.raw.y);
-  Serial.print(',');
-  Serial.print(gyro.raw.z);
-  Serial.print(',');
-  Serial.print(accelmag.mag_raw.x);
-  Serial.print(',');
-  Serial.print(accelmag.mag_raw.y);
-  Serial.print(',');
-  Serial.print(accelmag.mag_raw.z);
-  Serial.println();
-
-  delay(50);
+  accelmag.getEvent(&event);
+  
+  // Mesures brutes converties en µT
+  Xm_print = accelmag.mag_raw.x*MAG_UT_LSB;
+  Ym_print = accelmag.mag_raw.y*MAG_UT_LSB;
+  Zm_print = accelmag.mag_raw.z*MAG_UT_LSB;
+  
+  Serial.print(Xm_print); Serial.print(" "); Serial.print(Ym_print); Serial.print(" "); Serial.println(Zm_print);
+  delay(125);
 }
+
